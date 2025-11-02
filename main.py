@@ -117,3 +117,5 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         mathjax_path=args.mathjax_path
     )
+
+    utils.clean_up()

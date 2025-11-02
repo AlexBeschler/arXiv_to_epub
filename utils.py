@@ -10,6 +10,9 @@ import tempfile
 from pathlib import Path
 import html as html_module
 
+def clean_up():
+    os.rmdir('temp_equations')
+
 # ============================================================================
 # Fetch Content
 # ============================================================================
@@ -338,6 +341,8 @@ def render_all_figures(figure_elements_data, css_content, temp_dir):
         browser.close()
 
     return figure_images
+
+def create_table_render_html(table_html, css_content):
     """Create a minimal HTML file for rendering a table."""
     
     # Generic table CSS that works with any table structure
@@ -347,6 +352,8 @@ def render_all_figures(figure_elements_data, css_content, temp_dir):
             border-collapse: collapse;
             font-size: 0.85em;
             margin: 1em auto;
+            width: 100%;
+            table-layout: fixed;
         }
         
         table th,
@@ -355,6 +362,7 @@ def render_all_figures(figure_elements_data, css_content, temp_dir):
             border: 1px solid #333;
             text-align: left;
             vertical-align: top;
+            word-wrap: break-word;
         }
         
         table th {
@@ -632,6 +640,10 @@ def parse_arxiv_content(html_content, arxiv_id=None, mathjax_path=None, temp_dir
         
         # Figures (will be rendered with Playwright)
         elif element.name == 'figure':
+            # Skip figures that contain tables - render the table directly instead
+            if element.find('table'):
+                continue
+            
             # Extract original figure HTML (preserves structure, captions, sub-images)
             figure_html = str(element)
             

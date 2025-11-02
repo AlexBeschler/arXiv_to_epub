@@ -7,6 +7,7 @@
 *.ttf
 mathjax/
 output/
+temp_equations/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
