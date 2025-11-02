@@ -1,0 +1,133 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body {
+    font-family: Georgia, serif;
+    line-height: 1.5;
+    margin: 1em;
+    text-align: left;
+}
+
+h1 {
+    font-size: 1.8em;
+    margin: 1em 0 0.5em 0;
+    font-weight: bold;
+    page-break-after: avoid;
+}
+
+h2 {
+    font-size: 1.5em;
+    margin: 1em 0 0.5em 0;
+    font-weight: bold;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 1.3em;
+    margin: 0.8em 0 0.5em 0;
+    font-weight: bold;
+    page-break-after: avoid;
+}
+
+h4 {
+    font-size: 1.1em;
+    margin: 0.8em 0 0.5em 0;
+    font-weight: bold;
+    page-break-after: avoid;
+}
+
+p {
+    margin: 0.5em 0;
+    text-align: justify;
+    text-indent: 0;
+}
+
+/* Figures */
+.figure, .table-image {
+    margin: 1.5em 0;
+    padding: 0;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+.figure img, .table-image img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.caption {
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 0.5em;
+    text-align: center;
+}
+
+/* Inline Math */
+img.math-inline {
+    display: inline;
+    vertical-align: middle;
+    margin: 0 0.2em;
+    max-height: 1.5em;
+}
+
+/* Display Math (Block) */
+.math-display {
+    margin: 1em 0;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+.math-display-img {
+    max-width: 100%;
+    height: auto;
+    display: inline-block;
+}
+
+/* Tables */
+.table-wrapper {
+    margin: 1.5em 0;
+    overflow-x: auto;
+    page-break-inside: avoid;
+}
+
+table.ereader-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin: 1em 0;
+}
+
+table.ereader-table th,
+table.ereader-table td {
+    padding: 0.5em;
+    border: 1px solid #333;
+    text-align: left;
+    vertical-align: top;
+}
+
+table.ereader-table th {
+    font-weight: bold;
+    background-color: #e0e0e0;
+}
+
+table.ereader-table thead th {
+    border-bottom: 2px solid #000;
+}
+
+/* Responsive for narrow screens */
+@media (max-width: 600px) {
+    table.ereader-table {
+        font-size: 0.75em;
+    }
+    
+    table.ereader-table th,
+    table.ereader-table td {
+        padding: 0.3em;
+    }
+}
