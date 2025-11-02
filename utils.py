@@ -847,6 +847,30 @@ def create_clean_epub(title, html_content, math_images, table_images, figure_ima
     )
     book.add_item(css_item)
     
+    # Add custom fonts
+    font_files = [
+        ('fonts/Literata.ttf', 'font-regular'),
+        ('fonts/Literata-Italic.ttf', 'font-italic'),
+    ]
+    
+    for font_path, font_uid in font_files:
+        if os.path.exists(font_path):
+            try:
+                with open(font_path, 'rb') as f:
+                    font_content = f.read()
+                
+                font_item = epub.EpubItem(
+                    uid=font_uid,
+                    file_name=f'fonts/{os.path.basename(font_path)}',
+                    media_type='application/x-font-ttf',
+                    content=font_content
+                )
+                book.add_item(font_item)
+            except Exception as e:
+                print(f"  ⚠ Warning: Failed to embed font {font_path}: {e}")
+        else:
+            print(f"  ⚠ Warning: Font file not found: {font_path}")
+    
     # Add math equation images
     for idx, math_bytes in enumerate(math_images):
         try:

@@ -1,3 +1,25 @@
+/* Custom Font Embedding */
+@font-face {
+    font-family: 'Literata';
+    src: url('../fonts/Literata.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Literata';
+    src: url('../fonts/Literata.ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Literata';
+    src: url('../fonts/Literata-Italic.ttf');
+    font-weight: normal;
+    font-style: italic;
+}
+
 /* Reset and base styles */
 * {
     margin: 0;
@@ -6,7 +28,7 @@
 }
 
 body {
-    font-family: Georgia, serif;
+    font-family: 'CustomFont', Georgia, serif;
     line-height: 1.5;
     margin: 1em;
     text-align: left;
