@@ -7,6 +7,7 @@ import io
 import re
 import os
 import tempfile
+import shutil
 from pathlib import Path
 import html as html_module
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -15,9 +16,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from cover_generator import CoverGenerator
 
 def clean_up():
-    os.rmdir('temp_equations')
+    shutil.rmtree('temp_equations')
 
-    os.remove('output/cover.png')
+    if os.path.exists('output/cover.png'):
+        os.remove('output/cover.png')
 
 # ============================================================================
 # Fetch Content
@@ -85,8 +87,8 @@ def render_math_with_playwright(mathml_str, display_type, browser, temp_dir):
         temp_path = f.name
     
     try:
-        # Create new page
-        page = browser.new_page()
+        # Create new page with device scale factor for sharper rendering
+        page = browser.new_page(viewport={'width': 2400, 'height': 2000, 'device_scale_factor': 2})
         
         # Load the HTML file
         file_url = f'file://{os.path.abspath(temp_path)}'
@@ -115,44 +117,72 @@ def render_math_with_playwright(mathml_str, display_type, browser, temp_dir):
         except:
             pass
 
+def render_equation_worker(idx, mathml_str, display_type, alt_text, temp_dir):
+    """
+    Worker function for rendering a single equation in a thread.
+    Creates its own browser instance to ensure thread safety.
+    Returns (idx, screenshot_bytes) on success or (idx, None, exception) on error.
+    """
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            screenshot_bytes = render_math_with_playwright(
+                mathml_str, display_type, browser, temp_dir
+            )
+            browser.close()
+            return (idx, screenshot_bytes)
+    except Exception as e:
+        return (idx, None, e)
+
 def render_all_math_equations(math_elements_data, temp_dir):
-    """Render all math equations using Playwright + MathJax."""
+    """Render all math equations using multithreaded Playwright + MathJax."""
     if not math_elements_data:
         return []
     
     # Ensure temp directory exists
     Path(temp_dir).mkdir(exist_ok=True, parents=True)
     
-    math_images = []
+    print(f'Rendering {len(math_elements_data)} math equations with 5 threads')
     
-    # Start Playwright browser (reuse for all equations)
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless = True)
-        render_errors = []
-
-        print('Rendering math equations')
-        
+    results = {}  # {idx: screenshot_bytes}
+    errors = {}   # {idx: error}
+    
+    # Use ThreadPoolExecutor with 5 workers
+    with ThreadPoolExecutor(max_workers = 5) as executor:
+        # Submit all equations as separate tasks
+        futures = {}
         for idx, (mathml_str, display_type, alt_text) in enumerate(math_elements_data):
-            print(f"\r  Processing: {idx + 1}/{len(math_elements_data)}", end="")
-            try:
-                screenshot_bytes = render_math_with_playwright(
-                    mathml_str, display_type, browser, temp_dir
-                )
-                math_images.append(screenshot_bytes)
-            except Exception as e:
-                render_errors.append({
-                    'idx': idx,
-                    'error': e
-                })
-                # Create a placeholder image
-                math_images.append(create_placeholder_image(alt_text))
+            future = executor.submit(
+                render_equation_worker,
+                idx, mathml_str, display_type, alt_text, temp_dir
+            )
+            futures[future] = idx
         
-        if len(render_errors) > 0:
-            print('⚠ Warning: Failed to render math equation(s): ')
-            print('\n'.join([str(x) for x in render_errors]))
-        
-        browser.close()
-
+        # Collect results as they complete
+        for completed, future in enumerate(as_completed(futures), start = 1):
+            print(f'\r   Completed {completed}/{len(math_elements_data)}', end = '')
+            result = future.result()
+            if len(result) == 2:
+                # Success: (idx, screenshot_bytes)
+                idx, screenshot_bytes = result
+                results[idx] = screenshot_bytes
+            else:
+                # Error: (idx, None, exception)
+                idx, _, error = result
+                errors[idx] = error
+                # Get alt_text for placeholder
+                _, _, alt_text = math_elements_data[idx]
+                results[idx] = create_placeholder_image(alt_text)
+    
+    # Build ordered list of images
+    math_images = [results[i] for i in range(len(math_elements_data))]
+    print()
+    
+    if errors:
+        print(f'⚠ Warning: Failed to render {len(errors)} math equation(s):')
+        for idx, error in errors.items():
+            print(f'  Equation {idx}: {error}')
+    
     return math_images
 
 def create_placeholder_image(text, width=400, height=100):
@@ -275,7 +305,7 @@ def render_figure_with_playwright(figure_html, css_content, browser, temp_dir):
     
     try:
         # Create new page
-        page = browser.new_page(viewport={'width': 1400, 'height': 2000})
+        page = browser.new_page(viewport={'width': 2400, 'height': 2000, 'device_scale_factor': 2})
         
         # Load the HTML file
         file_url = f'file://{os.path.abspath(temp_path)}'
@@ -422,7 +452,7 @@ def render_table_with_playwright(table_html, css_content, browser, temp_dir):
     
     try:
         # Create new page with larger viewport for tables
-        page = browser.new_page(viewport={'width': 1400, 'height': 2000})
+        page = browser.new_page(viewport={'width': 2400, 'height': 2000, 'device_scale_factor': 2})
         
         # Load the HTML file
         file_url = f'file://{os.path.abspath(temp_path)}'

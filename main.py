@@ -51,22 +51,15 @@ def convert_arxiv_to_epub(
             arxiv_id=arxiv_id,  # Pass arxiv_id for constructing image URLs
             temp_dir=temp_dir
         )
-        
-        # 4. Build clean HTML
-        clean_html = utils.build_clean_html(content_data)
-        
-        # 5. Create EPUB
+
         title = content_data['title']
         safe_title = re.sub(r'[^\w\s-]', '', title[:50])
         safe_title = re.sub(r'[-\s]+', '_', safe_title)
         output_path = f"{output_dir}/{arxiv_id}_{safe_title}.epub"
-        
+
         utils.create_clean_epub(
             title, 
-            clean_html,
-            content_data['math_images'],
-            content_data['table_images'],
-            content_data['figure_images'],
+            content_data,  # Pass the entire dictionary
             output_path
         )
         
