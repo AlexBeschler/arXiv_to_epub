@@ -9,6 +9,7 @@ import os
 import tempfile
 from pathlib import Path
 import html as html_module
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 1st Party
 from cover_generator import CoverGenerator
@@ -132,6 +133,7 @@ def render_all_math_equations(math_elements_data, temp_dir):
         print('Rendering math equations')
         
         for idx, (mathml_str, display_type, alt_text) in enumerate(math_elements_data):
+            print(f"\r  Processing: {idx + 1}/{len(math_elements_data)}", end="")
             try:
                 screenshot_bytes = render_math_with_playwright(
                     mathml_str, display_type, browser, temp_dir
@@ -749,17 +751,49 @@ def parse_arxiv_content(html_content, arxiv_id=None, temp_dir=None):
 # HTML Building
 # ============================================================================
 
-def build_clean_html(content_data):
-    """Build clean, simple HTML from extracted content."""
+def split_content_into_chapters(content_items, chapter_level=2):
+    """
+    Split content items into chapters based on heading level.
+    Returns a list of chapter dictionaries with title and content_items.
+    """
+    chapters = []
+    current_chapter = {
+        'title': 'Frontmatter',
+        'content_items': []
+    }
+    
+    for item in content_items:
+        if item['type'] == 'heading' and item['level'] == chapter_level:
+            # Save current chapter if it has content
+            if current_chapter['content_items']:
+                chapters.append(current_chapter)
+            
+            # Start new chapter
+            current_chapter = {
+                'title': item['content'],
+                'content_items': [item]  # Include the heading in the chapter
+            }
+        else:
+            # Add to current chapter
+            current_chapter['content_items'].append(item)
+    
+    # Add final chapter
+    if current_chapter['content_items']:
+        chapters.append(current_chapter)
+    
+    return chapters
+
+def build_clean_html(content_items, title):
+    """Build clean, simple HTML from extracted content items."""
     html_parts = []
     html_parts.append('<html xmlns="http://www.w3.org/1999/xhtml">')
     html_parts.append('<head>')
-    html_parts.append(f'<title>{html_module.escape(content_data["title"])}</title>')
+    html_parts.append(f'<title>{html_module.escape(title)}</title>')
     html_parts.append('</head>')
     html_parts.append('<body>')
     
     # Process content items in order
-    for item in content_data['content']:
+    for item in content_items:
         if item['type'] == 'heading':
             level = item['level']
             html_parts.append(f'<h{level}>{html_module.escape(item["content"])}</h{level}>')
@@ -830,8 +864,14 @@ def build_clean_html(content_data):
 # EPUB Creation
 # ============================================================================
 
-def create_clean_epub(title, html_content, math_images, table_images, figure_images, output_path):
+def create_clean_epub(title, content_data, output_path):
     """Create EPUB with clean CSS and support for math equations, tables, and figures."""
+    
+    # Extract components from content_data
+    all_content_items = content_data['content']
+    math_images = content_data['math_images']
+    table_images = content_data['table_images']
+    figure_images = content_data['figure_images']
     
     book = epub.EpubBook()
     book.set_identifier(f'arxiv_{Path(output_path).stem}')
@@ -922,23 +962,36 @@ def create_clean_epub(title, html_content, math_images, table_images, figure_ima
             )
             book.add_item(img_item)
         except Exception as e:
-            print(f"  ⚠ Warning: Failed to process figure {idx}: {e}")
+            print(f"  ⚠  Warning: Failed to process figure {idx}: {e}")
     
-    # Create main chapter
-    chapter = epub.EpubHtml(
-        title=title,
-        file_name='content.xhtml',
-        lang='en'
-    )
-    chapter.content = html_content
-    chapter.add_item(css_item)
-    book.add_item(chapter)
+    # Split content into chapters based on h2 headings
+    chapters_data = split_content_into_chapters(all_content_items, chapter_level=2)
     
-    # Set up navigation
-    book.toc = (chapter,)
+    # Create EpubHtml objects for each chapter
+    chapter_items = []
+    for idx, chapter_data in enumerate(chapters_data):
+        chapter_title = chapter_data['title']
+        chapter_content_items = chapter_data['content_items']
+        
+        # Build HTML for this chapter
+        html_content = build_clean_html(chapter_content_items, chapter_title)
+        
+        # Create chapter
+        chapter = epub.EpubHtml(
+            title=chapter_title,
+            file_name=f'chapter_{idx}.xhtml',
+            lang='en'
+        )
+        chapter.content = html_content
+        chapter.add_item(css_item)
+        book.add_item(chapter)
+        chapter_items.append(chapter)
+    
+    # Set up navigation with all chapters in ToC
+    book.toc = tuple(chapter_items)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
-    book.spine = ['cover', 'nav', chapter]
+    book.spine = ['cover', 'nav'] + chapter_items
     
     # Write EPUB
     epub.write_epub(output_path, book)
