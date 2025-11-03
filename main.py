@@ -8,7 +8,6 @@ import utils
 
 DEFAULT_CONFIG = {
     'output_dir': './output',
-    'mathjax_path': './mathjax/es5/tex-mml-svg.js',  # Path to local MathJax
     'temp_dir': './temp_equations',  # Temporary directory for equation HTML files
 }
 
@@ -17,7 +16,7 @@ DEFAULT_CONFIG = {
 # ============================================================================
 
 def convert_arxiv_to_epub(
-    html_url, output_dir=None, mathjax_path=None, temp_dir=None
+    html_url, output_dir=None, temp_dir=None
 ):
     """
     Main conversion function - orchestrates the entire process.
@@ -25,7 +24,6 @@ def convert_arxiv_to_epub(
     Args:
         html_url: arXiv HTML URL (e.g., "https://arxiv.org/html/2510.26721v1")
         output_dir: Directory for output EPUB (default: './output')
-        mathjax_path: Path to local MathJax file (default: './mathjax/es5/tex-mml-svg.js')
         temp_dir: Temporary directory for equation rendering (default: './temp_equations')
     
     Returns:
@@ -33,19 +31,11 @@ def convert_arxiv_to_epub(
     """
     # Use defaults from config
     output_dir = output_dir or DEFAULT_CONFIG['output_dir']
-    mathjax_path = mathjax_path or DEFAULT_CONFIG['mathjax_path']
     temp_dir = temp_dir or DEFAULT_CONFIG['temp_dir']
     
     try:
         # Ensure output directory exists
         Path(output_dir).mkdir(exist_ok=True, parents=True)
-        
-        # Check if MathJax exists
-        if not os.path.exists(mathjax_path):
-            print(f"\n⚠ WARNING: MathJax not found at {mathjax_path}")
-            print("Math equations will use placeholder images.")
-            print("To get proper rendering, download MathJax to ./mathjax/")
-            mathjax_path = None
         
         # 1. Extract arXiv ID
         arxiv_id = utils.extract_arxiv_id(html_url)
@@ -59,7 +49,6 @@ def convert_arxiv_to_epub(
         content_data = utils.parse_arxiv_content(
             html_content,
             arxiv_id=arxiv_id,  # Pass arxiv_id for constructing image URLs
-            mathjax_path=mathjax_path,
             temp_dir=temp_dir
         )
         
@@ -108,14 +97,12 @@ if __name__ == "__main__":
     )
     parser.add_argument('url', help='arXiv HTML URL (e.g., https://arxiv.org/html/2510.26721v1)')
     parser.add_argument('-o', '--output-dir', default='./output', help='Output directory (default: ./output)')
-    parser.add_argument('--mathjax-path', default='./mathjax/es5/tex-mml-svg.js', help='Path to local MathJax (default: ./mathjax/es5/tex-mml-svg.js)')
     
     args = parser.parse_args()
     
     convert_arxiv_to_epub(
         args.url,
-        output_dir=args.output_dir,
-        mathjax_path=args.mathjax_path
+        output_dir=args.output_dir
     )
 
     utils.clean_up()

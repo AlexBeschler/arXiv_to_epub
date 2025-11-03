@@ -35,7 +35,7 @@ def fetch_html(url):
     return response.text
 
 # ============================================================================
-# Math Equation Rendering with Playwright + MathJax
+# Math Equation Rendering with Playwright
 # ============================================================================
 
 def extract_mathml_string(math_element):
@@ -54,10 +54,9 @@ def get_math_display_type(math_element):
     display_attr = math_element.get('display', 'inline')
     return 'block' if display_attr == 'block' else 'inline'
 
-def create_math_render_html(mathml_str, display_type, mathjax_path):
+def create_math_render_html(mathml_str, display_type, ):
     """Create a minimal HTML file for rendering a single equation."""
-    # Use absolute path for MathJax
-    mathjax_abs_path = os.path.abspath(mathjax_path)
+    mathjax_url = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js'
     
     # Set container width based on display type
     container_width = '700px' if display_type == 'block' else '400px'
@@ -67,7 +66,7 @@ def create_math_render_html(mathml_str, display_type, mathjax_path):
         html_template: str = ''.join(f.readlines())
         html_template = (
             html_template
-                .replace('[mathjax_abs_path]', mathjax_abs_path)
+                .replace('[mathjax_abs_path]', mathjax_url)
                 .replace('[padding]', padding)
                 .replace('[container_width]', container_width)
                 .replace('[mathml_str]', mathml_str)
@@ -75,12 +74,12 @@ def create_math_render_html(mathml_str, display_type, mathjax_path):
     
     return html_template
 
-def render_math_with_playwright(mathml_str, display_type, mathjax_path, browser, temp_dir):
-    """Render a single math equation using Playwright and MathJax."""
+def render_math_with_playwright(mathml_str, display_type, browser, temp_dir):
+    """Render a single math equation using Playwright"""
     
     # Create temporary HTML file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.html', dir=temp_dir, delete=False, encoding='utf-8') as f:
-        html_content = create_math_render_html(mathml_str, display_type, mathjax_path)
+        html_content = create_math_render_html(mathml_str, display_type)
         f.write(html_content)
         temp_path = f.name
     
@@ -115,7 +114,7 @@ def render_math_with_playwright(mathml_str, display_type, mathjax_path, browser,
         except:
             pass
 
-def render_all_math_equations(math_elements_data, mathjax_path, temp_dir):
+def render_all_math_equations(math_elements_data, temp_dir):
     """Render all math equations using Playwright + MathJax."""
     if not math_elements_data:
         return []
@@ -135,7 +134,7 @@ def render_all_math_equations(math_elements_data, mathjax_path, temp_dir):
         for idx, (mathml_str, display_type, alt_text) in enumerate(math_elements_data):
             try:
                 screenshot_bytes = render_math_with_playwright(
-                    mathml_str, display_type, mathjax_path, browser, temp_dir
+                    mathml_str, display_type, browser, temp_dir
                 )
                 math_images.append(screenshot_bytes)
             except Exception as e:
@@ -506,7 +505,7 @@ def extract_text_content(element):
         text += extract_text_content(child)
     return text
 
-def parse_arxiv_content(html_content, arxiv_id=None, mathjax_path=None, temp_dir=None):
+def parse_arxiv_content(html_content, arxiv_id=None, temp_dir=None):
     """
     Parse arXiv HTML and extract content elements in order.
     Returns content items with MathML ready for rendering.
@@ -704,8 +703,8 @@ def parse_arxiv_content(html_content, arxiv_id=None, mathjax_path=None, temp_dir
     
     # Now render all math equations with Playwright
     math_images = []
-    if math_elements_data and mathjax_path and temp_dir:
-        math_images = render_all_math_equations(math_elements_data, mathjax_path, temp_dir)
+    if math_elements_data and temp_dir:
+        math_images = render_all_math_equations(math_elements_data, temp_dir)
     
     # Render all tables with Playwright
     table_images = []
