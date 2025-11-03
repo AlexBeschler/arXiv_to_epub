@@ -10,8 +10,13 @@ import tempfile
 from pathlib import Path
 import html as html_module
 
+# 1st Party
+from cover_generator import CoverGenerator
+
 def clean_up():
     os.rmdir('temp_equations')
+
+    os.remove('output/cover.png')
 
 # ============================================================================
 # Fetch Content
@@ -834,6 +839,16 @@ def create_clean_epub(title, html_content, math_images, table_images, figure_ima
     book.set_title(title)
     book.set_language('en')
     book.add_author('arXiv Paper')
+
+    cover_generator = CoverGenerator()
+    cover = cover_generator.generate_cover(
+        title = title,
+        authors = ['arXiv Paper'],
+        output_path = "output/cover.png"
+    )
+
+    with open("output/cover.png", 'rb') as cover_file:
+        book.set_cover('cover.png', cover_file.read())
     
     # Enhanced CSS with inline/display math support
     with open('templates/css_template.css', 'r') as f:
@@ -924,7 +939,7 @@ def create_clean_epub(title, html_content, math_images, table_images, figure_ima
     book.toc = (chapter,)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
-    book.spine = ['nav', chapter]
+    book.spine = ['cover', 'nav', chapter]
     
     # Write EPUB
     epub.write_epub(output_path, book)
