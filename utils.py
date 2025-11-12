@@ -237,72 +237,15 @@ def fix_image_urls_in_html(html_str, arxiv_id):
 
 def create_figure_render_html(figure_html, css_content):
     """Create HTML page for rendering a figure."""
-    return f'''<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        /* Root-based scaling */
-        html {{
-            font-size: 16px;
-        }}
-        
-        /* Bootstrap-inspired principles */
-        *, *::before, *::after {{
-            box-sizing: border-box;
-        }}
-        
-        body {{
-            margin: 0;
-            padding: 20px;
-            background: white;
-            font-family: Georgia, serif;
-            font-size: 1rem;
-            line-height: 1.5;
-        }}
-        
-        /* Generic figure styling */
-        figure {{
-            margin: 1em auto;
-            text-align: center;
-            max-width: 1200px;
-        }}
-        
-        figure img {{
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0.5em auto;
-        }}
-        
-        figcaption {{
-            font-size: 0.9em;
-            font-style: italic;
-            margin-top: 0.5em;
-            text-align: center;
-        }}
-        
-        /* Standalone image styling */
-        .standalone-image {{
-            margin: 1em auto;
-            text-align: center;
-            max-width: 1200px;
-        }}
-        
-        .standalone-image img {{
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }}
-        
-        {css_content}
-    </style>
-</head>
-<body>
-    {figure_html}
-</body>
-</html>'''
+    with open('templates/figure_template.html', 'r') as f:
+        html_template: str = ''.join(f.readlines())
+        html_template = (
+            html_template
+                .replace('[css_content]', css_content)
+                .replace('[figure_html]', figure_html)
+        )
+
+    return html_template
 
 def render_figure_with_playwright(figure_html, css_content, browser, temp_dir):
     """Render a figure using Playwright, allowing browser to fetch images."""
@@ -392,75 +335,18 @@ def create_table_render_html(table_html, css_content):
     """Create a minimal HTML file for rendering a table."""
     
     # Generic table CSS that works with any table structure
-    generic_css = """
-        /* Generic table styling for any structure */
-        table {
-            border-collapse: collapse;
-            font-size: 1em;
-            margin: 1em auto;
-            width: 100%;
-            table-layout: fixed;
-        }
-        
-        table th,
-        table td {
-            padding: 0.5em;
-            border: 1px solid #333;
-            text-align: left;
-            vertical-align: top;
-            word-wrap: break-word;
-        }
-        
-        table th {
-            font-weight: bold;
-            background-color: #e0e0e0;
-        }
-        
-        table img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 2px auto;
-        }
-        
-        thead th {
-            border-bottom: 2px solid #000;
-        }
-    """
+    with open('templates/table_template.css', 'r') as f:
+        generic_css: str = ''.join(f.readlines())
     
-    html_template = f'''<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        /* Root-based scaling */
-        html {{
-            font-size: 16px;
-        }}
-        
-        /* Bootstrap-inspired principles */
-        *, *::before, *::after {{
-            box-sizing: border-box;
-        }}
-        
-        body {{
-            margin: 0;
-            padding: 20px;
-            background: white;
-            font-family: Georgia, serif;
-            font-size: 1rem;
-            line-height: 1.5;
-        }}
-        
-        {generic_css}
-        
-        {css_content}
-    </style>
-</head>
-<body>
-    {table_html}
-</body>
-</html>'''
+    with open('templates/table_template.html', 'r') as f:
+        html_template: str = ''.join(f.readlines())
+        html_template = (
+            html_template
+                .replace('[generic_css]', generic_css)
+                .replace('[css_content]', css_content)
+                .replace('[table_html]', table_html)
+        )
+
     return html_template
 
 def render_table_with_playwright(table_html, css_content, browser, temp_dir):
