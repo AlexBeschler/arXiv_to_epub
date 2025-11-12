@@ -34,7 +34,7 @@ def fetch_html(url):
     """Fetch HTML content from arXiv."""
     response = requests.get(url)
     response.raise_for_status()
-    print(f"✓ Fetched {len(response.text):,} HTML characters")
+    print(f"Fetched {len(response.text):,} HTML characters")
     return response.text
 
 # ============================================================================
@@ -179,7 +179,7 @@ def render_all_math_equations(math_elements_data, temp_dir):
     print()
     
     if errors:
-        print(f'⚠ Warning: Failed to render {len(errors)} math equation(s):')
+        print(f'Warning: Failed to render {len(errors)} math equation(s):')
         for idx, error in errors.items():
             print(f'  Equation {idx}: {error}')
     
@@ -244,11 +244,23 @@ def create_figure_render_html(figure_html, css_content):
 <head>
     <meta charset="UTF-8">
     <style>
+        /* Root-based scaling */
+        html {{
+            font-size: 16px;
+        }}
+        
+        /* Bootstrap-inspired principles */
+        *, *::before, *::after {{
+            box-sizing: border-box;
+        }}
+        
         body {{
             margin: 0;
             padding: 20px;
             background: white;
             font-family: Georgia, serif;
+            font-size: 1rem;
+            line-height: 1.5;
         }}
         
         /* Generic figure styling */
@@ -371,7 +383,7 @@ def render_all_figures(figure_elements_data, css_content, temp_dir):
                 figure_images.append(create_placeholder_image(f"Figure/Image {idx+1}"))
         
         if len(render_errors) > 0:
-            print('⚠ Warning: Failed to render figure(s)/image(s): ')
+            print('Warning: Failed to render figure(s)/image(s): ')
             print('\n'.join([str(x) for x in render_errors]))
         
         browser.close()
@@ -386,7 +398,7 @@ def create_table_render_html(table_html, css_content):
         /* Generic table styling for any structure */
         table {
             border-collapse: collapse;
-            font-size: 0.85em;
+            font-size: 1em;
             margin: 1em auto;
             width: 100%;
             table-layout: fixed;
@@ -423,11 +435,23 @@ def create_table_render_html(table_html, css_content):
 <head>
     <meta charset="UTF-8">
     <style>
+        /* Root-based scaling */
+        html {{
+            font-size: 16px;
+        }}
+        
+        /* Bootstrap-inspired principles */
+        *, *::before, *::after {{
+            box-sizing: border-box;
+        }}
+        
         body {{
             margin: 0;
             padding: 20px;
             background: white;
             font-family: Georgia, serif;
+            font-size: 1rem;
+            line-height: 1.5;
         }}
         
         {generic_css}
@@ -513,7 +537,7 @@ def render_all_tables(table_elements_data, css_content, temp_dir):
                 table_images.append(create_placeholder_image(f"Table {idx+1}"))
         
         if len(render_errors) > 0:
-            print('⚠ Warning: Failed to render table(s): ')
+            print('Warning: Failed to render table(s): ')
             print('\n'.join([str(x) for x in render_errors]))
         
         browser.close()
@@ -951,9 +975,9 @@ def create_clean_epub(title, content_data, output_path):
                 )
                 book.add_item(font_item)
             except Exception as e:
-                print(f"  ⚠ Warning: Failed to embed font {font_path}: {e}")
+                print(f"Warning: Failed to embed font {font_path}: {e}")
         else:
-            print(f"  ⚠ Warning: Font file not found: {font_path}")
+            print(f"Warning: Font file not found: {font_path}")
     
     # Add math equation images
     for idx, math_bytes in enumerate(math_images):
@@ -966,7 +990,7 @@ def create_clean_epub(title, content_data, output_path):
             )
             book.add_item(img_item)
         except Exception as e:
-            print(f"  ⚠ Warning: Failed to process math {idx}: {e}")
+            print(f"Warning: Failed to process math {idx}: {e}")
     
     # Add table images
     for idx, table_bytes in enumerate(table_images):
@@ -979,7 +1003,7 @@ def create_clean_epub(title, content_data, output_path):
             )
             book.add_item(img_item)
         except Exception as e:
-            print(f"  ⚠ Warning: Failed to process table {idx}: {e}")
+            print(f"Warning: Failed to process table {idx}: {e}")
     
     # Add figure/image images (rendered with Playwright)
     for idx, figure_bytes in enumerate(figure_images):
@@ -992,7 +1016,7 @@ def create_clean_epub(title, content_data, output_path):
             )
             book.add_item(img_item)
         except Exception as e:
-            print(f"  ⚠  Warning: Failed to process figure {idx}: {e}")
+            print(f"Warning: Failed to process figure {idx}: {e}")
     
     # Split content into chapters based on h2 headings
     chapters_data = split_content_into_chapters(all_content_items, chapter_level=2)
@@ -1025,4 +1049,4 @@ def create_clean_epub(title, content_data, output_path):
     
     # Write EPUB
     epub.write_epub(output_path, book)
-    print(f"✓ EPUB created!")
+    print(f"EPUB created!")
