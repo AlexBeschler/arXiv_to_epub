@@ -61,8 +61,7 @@ def create_math_render_html(mathml_str, display_type, ):
     """Create a minimal HTML file for rendering a single equation."""
     mathjax_url = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js'
     
-    # Set container width based on display type
-    container_width = '700px' if display_type == 'block' else '400px'
+    # Set padding based on display type
     padding = '20px' if display_type == 'block' else '10px'
 
     with open('templates/html_template.html', 'r') as f:
@@ -71,7 +70,6 @@ def create_math_render_html(mathml_str, display_type, ):
             html_template
                 .replace('[mathjax_abs_path]', mathjax_url)
                 .replace('[padding]', padding)
-                .replace('[container_width]', container_width)
                 .replace('[mathml_str]', mathml_str)
         )
     
