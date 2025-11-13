@@ -1,10 +1,10 @@
 import re
-import os
 from pathlib import Path
 import argparse
 
 # First Party
-import utils
+from utils import process_arxiv_paper, clean_up
+from epub_builder import create_epub
 
 DEFAULT_CONFIG = {
     'output_dir': './output',
@@ -16,8 +16,10 @@ DEFAULT_CONFIG = {
 # ============================================================================
 
 def convert_arxiv_to_epub(
-    html_url, output_dir=None, temp_dir=None
-):
+    html_url: str,
+    output_dir: str | None = None,
+    temp_dir: str | None = None
+) -> str | None:
     """
     Main conversion function - orchestrates the entire process.
     
@@ -27,7 +29,7 @@ def convert_arxiv_to_epub(
         temp_dir: Temporary directory for equation rendering (default: './temp_equations')
     
     Returns:
-        Path to the created EPUB file
+        Path to the created EPUB file, or None if conversion failed
     """
     # Use defaults from config
     output_dir = output_dir or DEFAULT_CONFIG['output_dir']
@@ -37,31 +39,18 @@ def convert_arxiv_to_epub(
         # Ensure output directory exists
         Path(output_dir).mkdir(exist_ok=True, parents=True)
         
-        # 1. Extract arXiv ID
-        arxiv_id = utils.extract_arxiv_id(html_url)
-        if not arxiv_id:
-            raise ValueError("Could not extract arXiv ID from URL")
+        # Process the arXiv paper (fetch, parse, render)
+        content_data = process_arxiv_paper(html_url, output_dir, temp_dir)
         
-        # 2. Fetch HTML
-        html_content = utils.fetch_html(html_url)
-        
-        # 3. Parse and extract content (including math, table, and figure rendering)
-        content_data = utils.parse_arxiv_content(
-            html_content,
-            arxiv_id=arxiv_id,  # Pass arxiv_id for constructing image URLs
-            temp_dir=temp_dir
-        )
-
+        # Generate output filename
         title = content_data['title']
+        arxiv_id = content_data['arxiv_id']
         safe_title = re.sub(r'[^\w\s-]', '', title[:50])
         safe_title = re.sub(r'[-\s]+', '_', safe_title)
-        output_path = f"{output_dir}/{arxiv_id}_{safe_title}.epub"
+        output_path = str(Path(output_dir) / f"{arxiv_id}_{safe_title}.epub")
 
-        utils.create_clean_epub(
-            title, 
-            content_data,  # Pass the entire dictionary
-            output_path
-        )
+        # Create EPUB
+        create_epub(title, content_data, output_path)
         
         print("\n" + "=" * 70)
         print("✓ CONVERSION COMPLETE!")
@@ -98,4 +87,4 @@ if __name__ == "__main__":
         output_dir=args.output_dir
     )
 
-    utils.clean_up()
+    clean_up()
