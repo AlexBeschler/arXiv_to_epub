@@ -19,12 +19,17 @@
             padding: 0;
             background: white;
             font-size: 1rem;
+            /* Center content in large viewport */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
         
         #equation-container {
             display: inline-block;
             padding: [padding];
             background: white;
+            max-width: 52rem; /* Constrain equation width */
         }
     </style>
 </head>

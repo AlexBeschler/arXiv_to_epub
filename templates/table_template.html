@@ -20,6 +20,15 @@
             font-family: Georgia, serif;
             font-size: 1rem;
             line-height: 1.5;
+            /* Center content in large viewport */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        /* Wrapper to constrain table width */
+        body > table {
+            max-width: 70rem; /* Wider than figures to accommodate complex tables */
         }
         
         [generic_css]

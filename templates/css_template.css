@@ -32,7 +32,7 @@ html {
 }
 
 body {
-    font-family: 'CustomFont', Georgia, serif;
+    font-family: 'Literata', Georgia, serif;
     line-height: 1.5;
     margin: 1em;
     text-align: left;
@@ -144,6 +144,12 @@ table.ereader-table th {
 
 table.ereader-table thead th {
     border-bottom: 2px solid #000;
+}
+
+img, svg, .ltx_graphics {
+    max-width: 52rem !important;
+    width: auto !important;
+    height: auto !important;
 }
 
 /* Responsive for narrow screens */

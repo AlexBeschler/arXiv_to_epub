@@ -1,11 +1,9 @@
 /* Generic table styling for any structure */
 table {
+    display: inline-table;
     border-collapse: collapse;
     font-size: 1em;
     margin: 1em auto;
-    /* width: 100%; */
-    table-layout: auto;
-    display: inline-table;
 }
 
 table th,
