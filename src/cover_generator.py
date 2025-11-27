@@ -1,39 +1,54 @@
 from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
+
+# Import config
+from config import CoverConfig, get_config
 
 class CoverGenerator:
-    def __init__(
-        self,
-        width: int = 1600,
-        height: int = 2400,
-        bg_color: str = "white",
-        text_color: str = "black",
-        font_path: str = None
-    ):
-        self.width = width
-        self.height = height
-        self.bg_color = bg_color
-        self.text_color = text_color
-        self.font_path = font_path
+    """Generate book covers for EPUB files."""
+    
+    def __init__(self, config: CoverConfig | None = None):
+        """
+        Initialize cover generator.
         
-        # Layout proportions
-        self.left_margin = int(width * 0.12)
-        self.right_margin = int(width * 0.12)
-        self.top_padding = int(height * 0.25)
+        Args:
+            config: CoverConfig instance (uses global default if None)
+        """
+        if config is None:
+            config = get_config().cover
         
-        # Font sizes
-        self.title_font_size = 120
-        self.author_font_size = 80
+        self.config = config
         
-    def _get_font(self, size: int) -> ImageFont.FreeTypeFont:
-        """Get font object of specified size."""
-        return ImageFont.truetype("fonts/Literata.ttf", size)
+        # Calculate layout from config ratios
+        self.width = config.width
+        self.height = config.height
+        self.left_margin = int(config.width * config.left_margin_ratio)
+        self.right_margin = int(config.width * config.right_margin_ratio)
+        self.top_padding = int(config.height * config.top_padding_ratio)
+        
+    def _get_font(self, size: int, font_path: Path | None = None) -> ImageFont.FreeTypeFont:
+        """
+        Get font object of specified size.
+        
+        Args:
+            size: Font size in points
+            font_path: Path to font file (uses config default if None)
+        
+        Returns:
+            PIL Font object
+        """
+        if font_path is None:
+            # Use font from global config
+            font_path = get_config().paths.font_regular
+        
+        return ImageFont.truetype(str(font_path), size)
     
     def _wrap_text(
         self,
         text: str,
         font: ImageFont.FreeTypeFont,
         max_width: int
-    ):
+    ) -> list[str]:
         """
         Wrap text to fit within max_width.
         
@@ -69,7 +84,7 @@ class CoverGenerator:
         
         return lines
     
-    def _format_authors(self, authors) -> str:
+    def _format_authors(self, authors: list[str]) -> str:
         """
         Format author list for display.
         
@@ -86,14 +101,14 @@ class CoverGenerator:
         elif len(authors) == 2:
             return f"{authors[0]}, {authors[1]}"
         else:
-            # For 3+ authors, put each on new line or use comma separation
+            # For 3+ authors, use comma separation
             return ", ".join(authors)
     
     def generate_cover(
         self,
         title: str,
-        authors,
-        output_path: str = None
+        authors: list[str],
+        output_path: str | Path | None = None
     ) -> Image.Image:
         """
         Generate book cover image.
@@ -106,13 +121,13 @@ class CoverGenerator:
         Returns:
             PIL Image object
         """
-        # Create blank canvas
-        img = Image.new('RGB', (self.width, self.height), self.bg_color)
+        # Create blank canvas with config colors
+        img = Image.new('RGB', (self.width, self.height), self.config.bg_color)
         draw = ImageDraw.Draw(img)
         
-        # Load fonts
-        title_font = self._get_font(self.title_font_size)
-        author_font = self._get_font(self.author_font_size)
+        # Load fonts with config sizes
+        title_font = self._get_font(self.config.title_font_size)
+        author_font = self._get_font(self.config.author_font_size)
         
         # Calculate text area width
         text_width = self.width - self.left_margin - self.right_margin
@@ -122,39 +137,38 @@ class CoverGenerator:
         
         # Draw title
         y_position = self.top_padding
-        line_spacing = int(self.title_font_size * 1.3)
+        line_spacing = int(self.config.title_font_size * self.config.title_line_spacing)
         
         for line in title_lines:
             draw.text(
                 (self.left_margin, y_position),
                 line,
                 font=title_font,
-                fill=self.text_color
+                fill=self.config.text_color
             )
             y_position += line_spacing
         
-        # Add spacing between title and authors
-        y_position += int(self.height * 0.08)
+        # Add spacing between title and authors (from config)
+        y_position += int(self.height * self.config.title_author_gap_ratio)
         
         # Format and wrap authors
         author_text = self._format_authors(authors)
         author_lines = self._wrap_text(author_text, author_font, text_width)
         
         # Draw authors
-        author_line_spacing = int(self.author_font_size * 1.3)
+        author_line_spacing = int(self.config.author_font_size * self.config.author_line_spacing)
         
         for line in author_lines:
             draw.text(
                 (self.left_margin, y_position),
                 line,
                 font=author_font,
-                fill=self.text_color
+                fill=self.config.text_color
             )
             y_position += author_line_spacing
         
-        # Save if output path provided
+        # Save if output path provided (with config DPI)
         if output_path:
-            img.save(output_path, dpi = (300, 300))
+            img.save(str(output_path), dpi=self.config.dpi)
         
         return img
-    
